@@ -4,6 +4,7 @@ import { GoogleMap, Marker, LoadScript } from "@react-google-maps/api";
 import { useNavigate } from "react-router-dom";
 import ambulanceImg from "../assets/ambulance.png"; 
 import { SocketContext } from "../context/SocketContext";
+import EmergencyAccepted from "../components/EmergencyAccepted";
 
 // ---------- Map Component ----------
 const containerStyle = { width: "100%", height: "100%" };
@@ -78,20 +79,46 @@ const Home = ({ user }) => {
   const [vehicleFound, setVehicleFound] = useState(false);
   const [ambulanceMode, setAmbulanceMode] = useState(false);
   const [currentLocation, setCurrentLocation] = useState("Fetching...");
+  const [emergencyAccepted, setEmergencyAccepted] = useState(false);
+  const [emergencyData, setEmergencyData] = useState(null);
+  const [currentCoordinates, setCurrentCoordinates] = useState({ lat: 0, lng: 0 });
   const navigate = useNavigate();
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setCurrentCoordinates({ lat, lng });
         setCurrentLocation(
-          `Lat: ${pos.coords.latitude.toFixed(
-            3
-          )}, Lng: ${pos.coords.longitude.toFixed(3)}`
+          `Lat: ${lat.toFixed(3)}, Lng: ${lng.toFixed(3)}`
         );
       },
       () => setCurrentLocation("Location unavailable")
     );
   }, []);
+
+  // Socket event listeners for emergency
+  useEffect(() => {
+    if (!socket) return;
+
+    // Join socket room for user
+    if (user && user._id) {
+      socket.emit("user-join", { userId: user._id });
+    }
+
+    // Listen for emergency acceptance
+    socket.on("emergency-accepted", (data) => {
+      console.log("Emergency accepted:", data);
+      setEmergencyData(data);
+      setEmergencyAccepted(true);
+      setAmbulanceMode(false);
+    });
+
+    return () => {
+      socket.off("emergency-accepted");
+    };
+  }, [socket, user]);
 
   async function createRide() {
     try {
@@ -114,17 +141,40 @@ const Home = ({ user }) => {
     }
   }
 
-  const handleSOS = () => {
-    setVehicleFound(true);
-    setAmbulanceMode(true);
+  const handleSOS = async () => {
+    try {
+      // Create emergency request
+      const response = await axios.post(
+        `http://localhost:4000/emergency/create`,
+        {
+          location: currentCoordinates,
+          emergencyType: 'medical',
+          description: 'Emergency medical assistance needed'
+        },
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
 
-    const rideData = {
-      username: user?.username,
-      currentLocation: currentLocation,
-    };
+      console.log("Emergency created:", response.data);
+      
+      // Show ambulance mode
+      setVehicleFound(true);
+      setAmbulanceMode(true);
 
-    // Emit the ride request through socket
-    socket.emit("new-ride", rideData);
+      // Emit emergency through socket with address if available
+      socket.emit("emergency-sos", {
+        emergencyId: response.data.emergency._id,
+        userFullName: user?.fullname ? `${user.fullname.firstname} ${user.fullname.lastname}` : user?.username || 'Unknown User',
+        location: response.data.emergency.location, // Use the complete location data from backend
+        emergencyType: 'medical',
+        description: 'Emergency medical assistance needed'
+      });
+
+    } catch (err) {
+      console.error("Error creating emergency:", err);
+      alert("Failed to send emergency request. Please try again.");
+    }
   };
 
   const handleSignOut = () => {
@@ -194,6 +244,14 @@ const Home = ({ user }) => {
             location={currentLocation}
           />
         </div>
+      )}
+
+      {/* Emergency Accepted Popup */}
+      {emergencyAccepted && emergencyData && (
+        <EmergencyAccepted
+          emergencyData={emergencyData}
+          onClose={() => setEmergencyAccepted(false)}
+        />
       )}
     </div>
   );

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import CaptainDetails from "../components/CaptainDetails";
 import RidePopUp from "../components/RidePopUp";
 import ConfirmRidePopUp from "../components/ConfirmRidePopUp";
+import EmergencyPopUp from "../components/EmergencyPopUp";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { SocketContext } from "../context/SocketContext";
@@ -54,10 +55,12 @@ const LiveTracking = () => {
 const CaptainHome = () => {
   const [ridePopupPanel, setRidePopupPanel] = useState(false);
   const [confirmRidePopupPanel, setConfirmRidePopupPanel] = useState(false);
+  const [emergencyPopupPanel, setEmergencyPopupPanel] = useState(false);
 
   const ridePopupPanelRef = useRef(null);
   const confirmRidePopupPanelRef = useRef(null);
   const [ride, setRide] = useState(null);
+  const [emergency, setEmergency] = useState(null);
 
   const { socket } = useContext(SocketContext);
   const { captain } = useContext(CaptainDataContext);
@@ -101,6 +104,21 @@ const CaptainHome = () => {
     setRidePopupPanel(true);
   });
 
+  // Listen for emergency alerts
+  socket.on("emergency-alert", (data) => {
+    console.log("Emergency alert received:", data);
+    console.log("Emergency data structure:", {
+      emergencyId: data.emergencyId,
+      userFullName: data.userFullName,
+      location: data.location,
+      emergencyType: data.emergencyType,
+      description: data.description,
+      createdAt: data.createdAt
+    });
+    setEmergency(data);
+    setEmergencyPopupPanel(true);
+  });
+
   async function confirmRide() {
     await axios.post(
       `${import.meta.env.VITE_BASE_URL}/rides/confirm`,
@@ -117,6 +135,34 @@ const CaptainHome = () => {
 
     setRidePopupPanel(false);
     setConfirmRidePopupPanel(true);
+  }
+
+  async function acceptEmergency() {
+    try {
+          await axios.post(
+      `http://localhost:4000/emergency/accept`,
+      {
+        emergencyId: emergency.emergencyId,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+
+      setEmergencyPopupPanel(false);
+      // Navigate to emergency mode or show confirmation
+      console.log("Emergency accepted successfully");
+    } catch (error) {
+      console.error("Error accepting emergency:", error);
+      alert("Failed to accept emergency. Please try again.");
+    }
+  }
+
+  function declineEmergency() {
+    setEmergencyPopupPanel(false);
+    setEmergency(null);
   }
 
   useGSAP(
@@ -209,6 +255,16 @@ const CaptainHome = () => {
           confirmRide={confirmRide}
         />
       </div>
+
+      {/* Emergency Popup Panel */}
+      {emergencyPopupPanel && emergency && (
+        <EmergencyPopUp
+          emergency={emergency}
+          onAccept={acceptEmergency}
+          onDecline={declineEmergency}
+          setEmergencyPopupPanel={setEmergencyPopupPanel}
+        />
+      )}
 
       {/* Confirm Ride Popup Panel */}
       <div

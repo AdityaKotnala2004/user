@@ -14,6 +14,7 @@ const captainRoutes = require('./routes/captain.routes');
 const mapsRoutes = require('./routes/maps.routes');
 const rideRoutes = require('./routes/ride.routes');
 const userDetailsRoutes = require('./routes/userDetails.routes'); // ✅ added
+const emergencyRoutes = require('./routes/emergency.routes'); // ✅ added emergency routes
 
 // Connect DB
 connectToDb();
@@ -39,5 +40,6 @@ app.use('/captains', captainRoutes);
 app.use('/maps', mapsRoutes);
 app.use('/rides', rideRoutes);
 app.use('/user-details', userDetailsRoutes); // ✅ added
+app.use('/emergency', emergencyRoutes); // ✅ added emergency routes
 
 module.exports = app;

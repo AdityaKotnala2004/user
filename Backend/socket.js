@@ -19,6 +19,9 @@ function initializeSocket(server) {
       if (userType === "captain") {
         // Store captain's socket ID
         captainModel.findByIdAndUpdate(userId, { socketId: socket.id });
+      } else if (userType === "user") {
+        // Store user's socket ID
+        userModel.findByIdAndUpdate(userId, { socketId: socket.id });
       }
     });
 
@@ -29,6 +32,25 @@ function initializeSocket(server) {
     // Broadcast ride request to all captains
     socket.on("new-ride", (ride) => {
       io.emit("new-ride", ride);
+    });
+
+    // Emergency SOS events
+    socket.on("emergency-sos", (emergencyData) => {
+      console.log("Emergency SOS received:", emergencyData);
+      io.emit("emergency-alert", emergencyData);
+    });
+
+    socket.on("emergency-accepted", (data) => {
+      io.emit("emergency-accepted", data);
+    });
+
+    socket.on("emergency-status-update", (data) => {
+      io.emit("emergency-status-updated", data);
+    });
+
+    // User join event for emergency notifications
+    socket.on("user-join", ({ userId }) => {
+      userModel.findByIdAndUpdate(userId, { socketId: socket.id });
     });
   });
 }

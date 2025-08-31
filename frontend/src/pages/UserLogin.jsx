@@ -22,7 +22,7 @@ const UserLogin = () => {
       const userData = { email, password };
 
       const response = await axios.post(
-        `${import.meta.env.VITE_BASE_URL}/users/login`,
+        `http://localhost:4000/users/login`,
         userData,
         { headers: { 'Content-Type': 'application/json' } }
       );

@@ -21,6 +21,10 @@ const captainSchema = new mongoose.Schema({
         lowercase: true,
         match: [ /^\S+@\S+\.\S+$/, 'Please enter a valid email' ]
     },
+    phone: {
+        type: String,
+        default: 'Not provided'
+    },
     password: {
         type: String,
         required: true,
