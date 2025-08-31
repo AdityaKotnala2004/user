@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-const ConfirmRidePopUp = ({ ride, onAccept, onClose }) => {
+const ConfirmRidePopUp = (props) => {
   const [otp, setOtp] = useState("");
   const navigate = useNavigate();
 
@@ -14,7 +14,7 @@ const ConfirmRidePopUp = ({ ride, onAccept, onClose }) => {
       `${import.meta.env.VITE_BASE_URL}/rides/start-ride`,
       {
         params: {
-          rideId: ride._id,
+          rideId: props.ride._id,
           otp: otp,
         },
         headers: {
@@ -24,19 +24,24 @@ const ConfirmRidePopUp = ({ ride, onAccept, onClose }) => {
     );
 
     if (response.status === 200) {
-      onClose();
-      navigate("/captain-riding", { state: { ride: ride } });
+      props.setConfirmRidePopupPanel(false);
+      props.setRidePopupPanel(false);
+      navigate("/captain-riding", { state: { ride: props.ride } });
     }
   };
   return (
-    <div className="p-4 border rounded-lg shadow-lg">
-      <h2 className="text-lg font-bold">New Ride Request</h2>
-      <p>
-        <strong>Username:</strong> {ride.username}
-      </p>
-      <p>
-        <strong>Location:</strong> {ride.currentLocation}
-      </p>
+    <div>
+      <h5
+        className="p-1 text-center w-[93%] absolute top-0"
+        onClick={() => {
+          props.setRidePopupPanel(false);
+        }}
+      >
+        <i className="text-3xl text-gray-200 ri-arrow-down-wide-line"></i>
+      </h5>
+      <h3 className="text-2xl font-semibold mb-5">
+        Confirm this ride to Start
+      </h3>
       <div className="flex items-center justify-between p-3 border-2 border-yellow-400 rounded-lg mt-4">
         <div className="flex items-center gap-3 ">
           <img
@@ -45,7 +50,7 @@ const ConfirmRidePopUp = ({ ride, onAccept, onClose }) => {
             alt=""
           />
           <h2 className="text-lg font-medium capitalize">
-            {ride.user.fullname.firstname}
+            {props.ride?.user.fullname.firstname}
           </h2>
         </div>
         <h5 className="text-lg font-semibold">2.2 KM</h5>
@@ -56,20 +61,24 @@ const ConfirmRidePopUp = ({ ride, onAccept, onClose }) => {
             <i className="ri-map-pin-user-fill"></i>
             <div>
               <h3 className="text-lg font-medium">562/11-A</h3>
-              <p className="text-sm -mt-1 text-gray-600">{ride.pickup}</p>
+              <p className="text-sm -mt-1 text-gray-600">
+                {props.ride?.pickup}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-5 p-3 border-b-2">
             <i className="text-lg ri-map-pin-2-fill"></i>
             <div>
               <h3 className="text-lg font-medium">562/11-A</h3>
-              <p className="text-sm -mt-1 text-gray-600">{ride.destination}</p>
+              <p className="text-sm -mt-1 text-gray-600">
+                {props.ride?.destination}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-5 p-3">
             <i className="ri-currency-line"></i>
             <div>
-              <h3 className="text-lg font-medium">₹{ride.fare} </h3>
+              <h3 className="text-lg font-medium">₹{props.ride?.fare} </h3>
               <p className="text-sm -mt-1 text-gray-600">Cash Cash</p>
             </div>
           </div>
@@ -89,7 +98,10 @@ const ConfirmRidePopUp = ({ ride, onAccept, onClose }) => {
               Confirm
             </button>
             <button
-              onClick={onClose}
+              onClick={() => {
+                props.setConfirmRidePopupPanel(false);
+                props.setRidePopupPanel(false);
+              }}
               className="w-full mt-2 bg-red-600 text-lg text-white font-semibold p-3 rounded-lg"
             >
               Cancel

@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { GoogleMap, Marker, LoadScript } from "@react-google-maps/api";
 import { useNavigate } from "react-router-dom";
-import ambulanceImg from "../assets/ambulance.png"; // ✅ correct path
+import ambulanceImg from "../assets/ambulance.png"; 
 import { SocketContext } from "../context/SocketContext";
 
 // ---------- Map Component ----------
